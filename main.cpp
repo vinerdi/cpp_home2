@@ -1,95 +1,64 @@
 #include <iostream>
 #include <stdexcept>
 
+// Базовий клас для всіх винятків
+class CustomException : public std::runtime_error {
+public:
+    CustomException(const std::string& message) : std::runtime_error(message) {}
+};
+
+// Виняток для математичних помилок
+class MathException : public CustomException {
+public:
+    MathException(const std::string& message) : CustomException("Math error: " + message) {}
+};
+
+// Виняток для ділення на нуль
+class DivisionByZeroException : public MathException {
+public:
+    DivisionByZeroException() : MathException("Division by zero") {}
+};
+
+// Виняток для помилок роботи з файлами
+class FileException : public CustomException {
+public:
+    FileException(const std::string& message) : CustomException("File error: " + message) {}
+};
+
+// Виняток для відсутності файлу
+class FileNotFoundException : public FileException {
+public:
+    FileNotFoundException() : FileException("File not found") {}
+};
+
 // Виняток для нестачі пам'яті
-class MemoryAllocationException : public std::runtime_error {
+class MemoryException : public CustomException {
 public:
-    MemoryAllocationException() : std::runtime_error("Memory allocation failed") {}
+    MemoryException(const std::string& message) : CustomException("Memory error: " + message) {}
 };
 
-// Виняток для видалення з пустого списку
-class EmptyListException : public std::runtime_error {
+// Виняток для нестачі пам'яті
+class OutOfMemoryException : public MemoryException {
 public:
-    EmptyListException() : std::runtime_error("Attempt to delete from an empty list") {}
-};
-
-template <typename T>
-class DoublyLinkedList {
-private:
-    struct Node {
-        T data;
-        Node* next;
-        Node* prev;
-        Node(T value) : data(value), next(nullptr), prev(nullptr) {}
-    };
-
-    Node* head;
-    Node* tail;
-
-public:
-    DoublyLinkedList() : head(nullptr), tail(nullptr) {}
-
-    ~DoublyLinkedList() {
-        while (head != nullptr) {
-            Node* temp = head;
-            head = head->next;
-            delete temp;
-        }
-    }
-
-    void add(T value) {
-        Node* newNode = nullptr;
-        try {
-            newNode = new Node(value);
-        } catch (const std::bad_alloc&) {
-            throw MemoryAllocationException();
-        }
-
-        if (tail == nullptr) {
-            head = tail = newNode;
-        } else {
-            tail->next = newNode;
-            newNode->prev = tail;
-            tail = newNode;
-        }
-    }
-
-    void remove() {
-        if (head == nullptr) {
-            throw EmptyListException();
-        }
-
-        Node* temp = tail;
-        if (head == tail) {
-            head = tail = nullptr;
-        } else {
-            tail = tail->prev;
-            tail->next = nullptr;
-        }
-        delete temp;
-    }
-
-    void print() const {
-        Node* current = head;
-        while (current != nullptr) {
-            std::cout << current->data << " ";
-            current = current->next;
-        }
-        std::cout << std::endl;
-    }
+    OutOfMemoryException() : MemoryException("Out of memory") {}
 };
 
 int main() {
     try {
-        DoublyLinkedList<int> list;
-        list.add(1);
-        list.add(2);
-        list.print();
-        list.remove();
-        list.print();
-        list.remove();
-        list.remove(); // This will throw an exception
-    } catch (const std::exception& e) {
+        throw DivisionByZeroException();
+    } catch (const CustomException& e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+    try {
+        throw FileNotFoundException();
+    } catch (const CustomException& e) {
+        std::cerr << e.what() << std::endl;
+    }
+
+    try {
+        throw OutOfMemoryException();
+    } catch (const CustomException& e) {
         std::cerr << e.what() << std::endl;
     }
 
